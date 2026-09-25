@@ -18,7 +18,22 @@ JAVA_PORT="${JAVA_PORT:-8084}"
 N="${LOAD_N:-500}"
 WARMUP_N="${WARMUP_N:-3000}"
 
+GO_IMAGE="golang:1.22-alpine"
+GOCACHE_DIR="$(pwd)/.gocache"
+mkdir -p "$GOCACHE_DIR"
+
+loadtest() {
+  docker run --rm --network host \
+    -v "$(pwd):/work" -w /work \
+    -v "$GOCACHE_DIR:/root/.cache/go-build" \
+    "$GO_IMAGE" go run loadtest.go "$@"
+}
+
 echo "Puertos leídos de .env: go=$GO_PORT node=$NODE_PORT python=$PYTHON_PORT java=$JAVA_PORT"
+echo
+
+echo "=== 0. Trayendo $GO_IMAGE (si no está en caché) ==="
+docker pull "$GO_IMAGE" > /dev/null
 echo
 
 medir() {
@@ -56,10 +71,10 @@ medir() {
   sleep 0.5
 
   echo "  calentando ($WARMUP_N peticiones descartadas)..."
-  go run loadtest.go "$puerto" "$WARMUP_N" > /dev/null 2>&1
+  loadtest "$puerto" "$WARMUP_N" > /dev/null 2>&1
 
   local resultado
-  resultado=$(go run loadtest.go "$puerto" "$N")
+  resultado=$(loadtest "$puerto" "$N")
   echo "  carga: $resultado"
 
   kill "$pid" 2>/dev/null
