@@ -2,7 +2,24 @@
 set -uo pipefail
 cd "$(dirname "$0")"
 
-N=500  
+if [ ! -f .env ]; then
+  echo "No encuentro .env junto a este script. Creá uno con GO_PORT, NODE_PORT, PYTHON_PORT, JAVA_PORT."
+  exit 1
+fi
+set -a
+source .env
+set +a
+
+GO_PORT="${GO_PORT:-8081}"
+NODE_PORT="${NODE_PORT:-8082}"
+PYTHON_PORT="${PYTHON_PORT:-8083}"
+JAVA_PORT="${JAVA_PORT:-8084}"
+
+N="${LOAD_N:-500}"
+WARMUP_N="${WARMUP_N:-3000}"
+
+echo "Puertos leídos de .env: go=$GO_PORT node=$NODE_PORT python=$PYTHON_PORT java=$JAVA_PORT"
+echo
 
 medir() {
   local nombre="$1"; local puerto="$2"; shift 2
@@ -12,7 +29,7 @@ medir() {
 
   local t0 t1
   t0=$(date +%s.%N)
-  "${cmd[@]}" > "/tmp/${nombre}.log" 2>&1 &
+  PORT="$puerto" "${cmd[@]}" > "/tmp/${nombre}.log" 2>&1 &
   local pid=$!
 
   local listo=0
@@ -38,17 +55,12 @@ medir() {
 
   sleep 0.5
 
-  local rss_kb
-  rss_kb=$(grep VmRSS "/proc/${pid}/status" 2>/dev/null | awk '{print $2}')
-  printf "  rss_en_reposo: %s MB\n" "$(echo "scale=1; ${rss_kb:-0}/1024" | bc)"
+  echo "  calentando ($WARMUP_N peticiones descartadas)..."
+  go run loadtest.go "$puerto" "$WARMUP_N" > /dev/null 2>&1
 
   local resultado
   resultado=$(go run loadtest.go "$puerto" "$N")
   echo "  carga: $resultado"
-
-  local rss_post_kb
-  rss_post_kb=$(grep VmRSS "/proc/${pid}/status" 2>/dev/null | awk '{print $2}')
-  printf "  rss_post_carga: %s MB\n" "$(echo "scale=1; ${rss_post_kb:-0}/1024" | bc)"
 
   kill "$pid" 2>/dev/null
   wait "$pid" 2>/dev/null
@@ -56,7 +68,7 @@ medir() {
   echo
 }
 
-medir go       8081 ./go/bench-go
-medir node     8082 node ./node/server.js
-medir python   8083 python3 ./python/server.py
-medir java     8084 java -cp ./java Server
+medir go       "$GO_PORT"     ./go/bench-go
+medir node     "$NODE_PORT"   node ./node/server.js
+medir java     "$JAVA_PORT"   java -Dsun.net.httpserver.nodelay=true -cp ./java Server
+medir python   "$PYTHON_PORT" python3 ./python/server.py

@@ -1,6 +1,7 @@
 import json
 import math
 import os
+from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
@@ -55,8 +56,20 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
 
+MAX_WORKERS = min(256, (os.cpu_count() or 1) * 32)
+POOL = ThreadPoolExecutor(max_workers=MAX_WORKERS)
+
+
+class BenchServer(ThreadingHTTPServer):
+    request_queue_size = 1024
+    daemon_threads = True
+
+    def process_request(self, request, client_address):
+        POOL.submit(self.process_request_thread, request, client_address)
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "8083"))
-    server = ThreadingHTTPServer(("0.0.0.0", port), Handler)
-    print(f"python server escuchando en :{port}")
+    server = BenchServer(("0.0.0.0", port), Handler)
+    print(f"python server escuchando en :{port} (pool={MAX_WORKERS} workers)")
     server.serve_forever()
