@@ -1,0 +1,44 @@
+services:
+  bench-go:
+    build: ./go
+    container_name: bench-go
+    ports: ["8081:8081"]
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+    restart: unless-stopped   # refleja RNF-003: restart:always del SRS
+
+  bench-node:
+    build: ./node
+    container_name: bench-node
+    ports: ["8082:8082"]
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+    restart: unless-stopped
+
+  bench-python:
+    build: ./python
+    container_name: bench-python
+    ports: ["8083:8083"]
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+    restart: unless-stopped
+
+  bench-java:
+    build: ./java
+    container_name: bench-java
+    ports: ["8084:8084"]
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+    restart: unless-stopped
