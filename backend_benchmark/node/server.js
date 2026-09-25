@@ -41,4 +41,5 @@ const server = http.createServer((req, res) => {
   res.end();
 });
 
-server.listen(8082);
+const PORT = process.env.PORT || 8082;
+server.listen(PORT, () => console.log(`node server escuchando en :${PORT}`));

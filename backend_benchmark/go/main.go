@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"math"
 	"net/http"
+	"os"
 	"strconv"
 )
 
@@ -50,5 +52,10 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(out)
 	})
-	http.ListenAndServe(":8081", mux)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8081"
+	}
+	log.Println("go server escuchando en :" + port)
+	http.ListenAndServe(":"+port, mux)
 }

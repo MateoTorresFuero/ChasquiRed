@@ -1,7 +1,5 @@
 //go:build ignore
 
-// Ráfaga de N peticiones concurrentes contra /cercanos en el puerto dado.
-// Uso: go run loadtest.go <puerto> <n>
 package main
 
 import (

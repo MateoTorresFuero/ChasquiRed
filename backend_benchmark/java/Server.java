@@ -51,7 +51,10 @@ public class Server {
     }
 
     public static void main(String[] args) throws Exception {
-        HttpServer server = HttpServer.create(new InetSocketAddress(8084), 0);
+        String portEnv = System.getenv("PORT");
+        int port = (portEnv != null && !portEnv.isEmpty()) ? Integer.parseInt(portEnv) : 8084;
+        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+        System.out.println("java server escuchando en :" + port);
 
         server.createContext("/healthz", (HttpHandler) ex -> sendJson(ex, "{\"status\":\"ok\"}"));
 

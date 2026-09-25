@@ -1,5 +1,6 @@
 import json
 import math
+import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
@@ -25,7 +26,7 @@ def haversine_km(lat1, lon1, lat2, lon2):
 
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
-        pass  # silenciar logs de acceso para no distorsionar el benchmark
+        pass 
 
     def do_GET(self):
         parsed = urlparse(self.path)
@@ -55,5 +56,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    server = ThreadingHTTPServer(("0.0.0.0", 8083), Handler)
+    port = int(os.environ.get("PORT", "8083"))
+    server = ThreadingHTTPServer(("0.0.0.0", port), Handler)
+    print(f"python server escuchando en :{port}")
     server.serve_forever()
